@@ -18,6 +18,7 @@ async function bootstrap() {
     .setDescription('The Routex API description')
     .setVersion('1.0')
     .addTag('routex')
+    .addBearerAuth()
     .build();
   const docFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, docFactory);
