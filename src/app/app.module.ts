@@ -4,7 +4,8 @@ import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { BooksModule } from '../books/books.module';
 import * as dotenv from 'dotenv';
-
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-store';
 dotenv.config();
 
 @Module({
@@ -19,6 +20,13 @@ dotenv.config();
       entities: [__dirname + '/../**/*.entity.{js,ts}'],
       synchronize: true,
       autoLoadEntities: true,
+    }),
+    CacheModule.register({
+      global: true,
+      store: redisStore,
+      host: process.env.CACHE_HOST || 'localhost',
+      port: parseInt(process.env.CACHE_PORT || '6379'),
+      ttl: parseInt(process.env.CACHE_TTL || '60'),
     }),
     AuthModule,
     UsersModule,

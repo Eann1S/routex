@@ -12,9 +12,12 @@ import {
   updateBook,
 } from './books.e2e-utils';
 import { createRandomUser } from '../auth/auth.e2e-utils';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 describe('Books e2e tests', () => {
   let app: INestApplication;
+  let cache: Cache;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,10 +27,15 @@ describe('Books e2e tests', () => {
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
+    cache = app.get<Cache>(CACHE_MANAGER);
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(async () => {
+    await cache.clear();
   });
 
   describe('Create book', () => {

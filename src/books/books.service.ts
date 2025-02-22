@@ -8,15 +8,33 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from './book.entity';
 import { CreateBookDto, UpdateBookDto } from './dto/books.dtos';
+import { Inject } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+
 @Injectable()
 export class BooksService {
+  private readonly cacheKeys = {
+    allBooks: 'books',
+    singleBook: (id: number) => `book:${id}`,
+  };
+
   constructor(
     @InjectRepository(Book) private booksRepository: Repository<Book>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async findAll(): Promise<Book[]> {
     try {
-      return await this.booksRepository.find();
+      const cachedBooks = await this.cacheManager.get<Book[]>(
+        this.cacheKeys.allBooks,
+      );
+      if (cachedBooks) {
+        return cachedBooks;
+      }
+      const books = await this.booksRepository.find();
+      await this.cacheManager.set(this.cacheKeys.allBooks, books);
+      return books;
     } catch (error) {
       Logger.error(error);
       throw new NotFoundException('Books not found');
@@ -25,9 +43,13 @@ export class BooksService {
 
   async findOne(id: number): Promise<Book> {
     try {
-      return await this.booksRepository.findOneOrFail({
-        where: { id },
-      });
+      const cacheKey = this.cacheKeys.singleBook(id);
+      const cachedBook = await this.cacheManager.get<Book>(cacheKey);
+      if (cachedBook) return cachedBook;
+
+      const book = await this.booksRepository.findOneOrFail({ where: { id } });
+      await this.cacheManager.set(cacheKey, book);
+      return book;
     } catch (error) {
       Logger.error(error);
       throw new NotFoundException('Book not found');
@@ -37,7 +59,7 @@ export class BooksService {
   async create(book: CreateBookDto): Promise<Book> {
     try {
       const { author, title, publishedYear, status } = book;
-      return await this.booksRepository.save(
+      const newBook = await this.booksRepository.save(
         {
           author,
           title,
@@ -46,6 +68,8 @@ export class BooksService {
         },
         { reload: true },
       );
+      await this.cacheManager.del(this.cacheKeys.allBooks);
+      return newBook;
     } catch (error) {
       Logger.error(error);
       throw new BadRequestException('Failed to create book');
@@ -61,7 +85,11 @@ export class BooksService {
         publishedYear,
         status,
       });
-      return this.findOne(id);
+      await this.cacheManager.del(this.cacheKeys.allBooks);
+
+      const updatedBook = await this.findOne(id);
+      await this.cacheManager.set(this.cacheKeys.singleBook(id), updatedBook);
+      return updatedBook;
     } catch (error) {
       Logger.error(error);
       throw new NotFoundException('Book not found');
@@ -71,6 +99,8 @@ export class BooksService {
   async delete(id: number): Promise<void> {
     try {
       await this.booksRepository.delete(id);
+      await this.cacheManager.del(this.cacheKeys.allBooks);
+      await this.cacheManager.del(this.cacheKeys.singleBook(id));
     } catch (error) {
       Logger.error(error);
       throw new NotFoundException('Book not found');

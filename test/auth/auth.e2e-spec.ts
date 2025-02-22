@@ -3,9 +3,12 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { generateRegisterDto, loginUser, registerUser } from './auth.e2e-utils';
 import { AppModule } from '../../src/app/app.module';
 import { TestingModule } from '@nestjs/testing';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('Auth tests', () => {
   let app: INestApplication;
+  let cache: Cache;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,10 +18,15 @@ describe('Auth tests', () => {
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
+    cache = app.get<Cache>(CACHE_MANAGER);
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(async () => {
+    await cache.clear();
   });
 
   describe('Register', () => {
