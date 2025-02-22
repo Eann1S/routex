@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,33 +17,33 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     try {
-      return this.usersRepository.find();
+      return await this.usersRepository.find();
     } catch (e) {
       Logger.error(e);
-      throw new BadRequestException('Failed to find users');
+      throw new NotFoundException('Failed to find users');
     }
   }
 
   async findOne(id: number): Promise<User> {
     try {
-      return this.usersRepository.findOneOrFail({ where: { id } });
+      return await this.usersRepository.findOneOrFail({ where: { id } });
     } catch (e) {
       Logger.error(e);
-      throw new BadRequestException('Failed to find user');
+      throw new NotFoundException('Failed to find user');
     }
   }
 
   async findByEmail(email: string): Promise<User> {
     try {
-      return this.usersRepository.findOneOrFail({ where: { email } });
+      return await this.usersRepository.findOneOrFail({ where: { email } });
     } catch (e) {
       Logger.error(e);
-      throw new BadRequestException('Failed to find user by email');
+      throw new NotFoundException('Failed to find user by email');
     }
   }
 
   async exists(email: string): Promise<boolean> {
-    return this.usersRepository.exists({ where: { email } });
+    return await this.usersRepository.exists({ where: { email } });
   }
 
   async create(user: CreateUserDto): Promise<User> {
@@ -49,7 +54,7 @@ export class UsersService {
         hashedPassword,
         name,
       });
-      return this.usersRepository.save(newUser);
+      return await this.usersRepository.save(newUser);
     } catch (e) {
       Logger.error(e);
       throw new BadRequestException('Failed to create user');
@@ -59,10 +64,10 @@ export class UsersService {
   async update(id: number, user: User): Promise<User> {
     try {
       await this.usersRepository.update(id, user);
-      return this.usersRepository.findOneOrFail({ where: { id } });
+      return await this.usersRepository.findOneOrFail({ where: { id } });
     } catch (e) {
       Logger.error(e);
-      throw new BadRequestException('Failed to update user');
+      throw new NotFoundException('Failed to update user');
     }
   }
 
@@ -71,7 +76,7 @@ export class UsersService {
       await this.usersRepository.delete(id);
     } catch (e) {
       Logger.error(e);
-      throw new BadRequestException('Failed to delete user');
+      throw new NotFoundException('Failed to delete user');
     }
   }
 }

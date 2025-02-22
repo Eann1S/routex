@@ -4,9 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
-import { Book } from 'src/books/book.entity';
 
 @Entity()
 export class User {
@@ -21,9 +19,6 @@ export class User {
 
   @Column()
   hashedPassword: string;
-
-  @OneToMany(() => Book, (book) => book.author)
-  books: Book[];
 
   @CreateDateColumn()
   createdAt: Date;

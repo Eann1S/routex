@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from './book.entity';
@@ -11,31 +16,36 @@ export class BooksService {
 
   async findAll(): Promise<Book[]> {
     try {
-      return this.booksRepository.find({ relations: ['author'] });
+      return await this.booksRepository.find();
     } catch (error) {
       Logger.error(error);
-      throw new BadRequestException('Failed to find books');
+      throw new NotFoundException('Books not found');
     }
   }
 
   async findOne(id: number): Promise<Book> {
     try {
-      return this.booksRepository.findOneOrFail({ where: { id } });
+      return await this.booksRepository.findOneOrFail({
+        where: { id },
+      });
     } catch (error) {
       Logger.error(error);
-      throw new BadRequestException('Failed to find book');
+      throw new NotFoundException('Book not found');
     }
   }
 
   async create(book: CreateBookDto): Promise<Book> {
     try {
-      const { authorId, title, publishedYear, status } = book;
-      return this.booksRepository.save({
-        authorId,
-        title,
-        publishedYear,
-        status,
-      });
+      const { author, title, publishedYear, status } = book;
+      return await this.booksRepository.save(
+        {
+          author,
+          title,
+          publishedYear,
+          status,
+        },
+        { reload: true },
+      );
     } catch (error) {
       Logger.error(error);
       throw new BadRequestException('Failed to create book');
@@ -44,11 +54,17 @@ export class BooksService {
 
   async update(id: number, book: UpdateBookDto): Promise<Book> {
     try {
-      await this.booksRepository.update(id, book);
+      const { author, title, publishedYear, status } = book;
+      await this.booksRepository.update(id, {
+        author,
+        title,
+        publishedYear,
+        status,
+      });
       return this.findOne(id);
     } catch (error) {
       Logger.error(error);
-      throw new BadRequestException('Failed to update book');
+      throw new NotFoundException('Book not found');
     }
   }
 
@@ -57,7 +73,7 @@ export class BooksService {
       await this.booksRepository.delete(id);
     } catch (error) {
       Logger.error(error);
-      throw new BadRequestException('Failed to delete book');
+      throw new NotFoundException('Book not found');
     }
   }
 }

@@ -4,15 +4,8 @@ import {
   PartialType,
   PickType,
 } from '@nestjs/swagger';
-import { UserDto } from '../../users/dto/user.dtos';
 import { BookStatus } from '../book.entity';
-import {
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  IsString,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsNotEmpty } from 'class-validator';
 
 export class BookDto {
   @ApiProperty({ example: 1 })
@@ -23,15 +16,8 @@ export class BookDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: 1 })
-  @IsNumber()
-  @IsNotEmpty()
-  authorId: number;
-
-  @ApiProperty({
-    example: { id: 1, name: 'John Doe', email: 'john.doe@example.com' },
-  })
-  author: UserDto;
+  @ApiProperty({ example: 'John Doe' })
+  author: string;
 
   @ApiProperty({ example: '1925' })
   publishedYear?: number;
@@ -54,7 +40,7 @@ export class BookDto {
 
 export class CreateBookDto extends PickType(BookDto, [
   'title',
-  'authorId',
+  'author',
   'publishedYear',
   'status',
 ]) {}

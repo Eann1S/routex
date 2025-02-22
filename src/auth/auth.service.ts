@@ -1,8 +1,8 @@
 import {
   Injectable,
-  BadRequestException,
   UnauthorizedException,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
@@ -17,6 +17,9 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    if (await this.usersService.exists(dto.email)) {
+      throw new BadRequestException('User already exists');
+    }
     const { password, email, name } = dto;
     const hashedPassword = await argon2.hash(password);
     const user = await this.usersService.create({
@@ -44,7 +47,7 @@ export class AuthService {
     if (await argon2.verify(user.hashedPassword, password)) {
       return user;
     }
-    throw new BadRequestException('Invalid credentials');
+    throw new UnauthorizedException('Invalid credentials');
   }
 
   async validateToken(token?: string) {

@@ -4,10 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
 } from 'typeorm';
-import { User } from 'src/users/user.entity';
+
 export enum BookStatus {
   AVAILABLE = 'available',
   BORROWED = 'borrowed',
@@ -25,11 +23,7 @@ export class Book {
   status: BookStatus;
 
   @Column()
-  authorId: number;
-
-  @ManyToOne(() => User, (user) => user.books)
-  @JoinColumn({ name: 'authorId' })
-  author: User;
+  author: string;
 
   @Column({ nullable: true })
   publishedYear?: number;
